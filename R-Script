@@ -1,22 +1,41 @@
-search_topic <- 'RNA sequencing single cell mouse cortex'
-search_query <- EUtilsSummary(search_topic, retmax=1000)
-summary(search_query)
+#Need to install the package RISmed and dplyr in advance
+library(RISmed)
+library(dplyr)
 
-# see the ids of our returned query
-QueryId(search_query)
+#Two keywords to search for in the abstract of each article 
+keyword1 = "neocortex"
+keyword2 = "mouse"
 
-# get actual data from PubMed
-records<- EUtilsGet(search_query)
-class(records)
+#Search query for articles on the NCBI databases
+search_input = c('single-cell RNA sequencing mouse',
+                 'single-cell RNA sequencing neocortex',
+                 'single cell RNA-seq mouse',
+                 'single-cell RNA-seq neocortex',
+                 'scRNA-seq mouse', 
+                 'scRNA-seq neocortex',
+                 'single-cell transcriptomic mouse',
+                 'single-cell transcriptomic neocortex')
 
-# store it
-#pubmed_data <- data.frame('Title'=ArticleTitle(records),'Abstract'=AbstractText(records))
-pubmed_data <- data.frame('Title'=ArticleTitle(records),'Article ID'=ArticleId(records))
-head(pubmed_data,1)
+#Create a data frame to store the result
+final_df <- data.frame()
 
-#pubmed_data$Abstract <- as.character(pubmed_data$Abstract)
-#pubmed_data$Abstract <- gsub(",", " ", pubmed_data$Abstract, fixed = TRUE)
+#Loop through all the search_input to find relevant articles
+for(search_topic in search_input) {
+  search_query <- EUtilsSummary(search_topic, retmax = 5000)
+  records<- EUtilsGet(search_query)
+  pubmed_data <- data.frame('Title'=ArticleTitle(records),
+                             'ID'=ArticleId(records),
+                             'Abstract'=AbstractText(records))
+  if (grepl(keyword1,search_topic) == FALSE) {
+    pubmed_data_filtered <- pubmed_data[grep(keyword1, pubmed_data$Abstract),]
+  } else {
+    pubmed_data_filtered <- pubmed_data[grep(keyword2, pubmed_data$Abstract),]
+  }
+  combine <- rbind(final_df, pubmed_data_filtered)
+  final_df <- combine[!duplicated(combine$ID),]
+}
 
-# see what we have
-str(pubmed_data)
-write.csv(pubmed_data,"C:\\Users\\cmnt1\\OneDrive\\Desktop\\R Project\\MyData.csv", row.names = FALSE)
+#Only include the title and the ID of the relevant articles in the dataframe 
+final_df <- select(final_df, Title, ID)
+
+write.csv(final_df,"C:\\Users\\cmnt1\\OneDrive\\Desktop\\R Project\\MyData.csv", row.names = FALSE)
