@@ -1,0 +1,32 @@
+#Need to install the package RISmed in advance
+library(RISmed)
+library(dplyr)
+
+#User input starts here.
+#Insert keywords here for searching on the NCBI database
+search_input <- c('RNA sequencing neonatal neocortex',
+                 'RNA sequencing perinatal neocortex',
+                 'RNA-seq neonatal neocortex',
+                 'RNA-seq perinatal neocortex',
+                 'transcriptomic neonatal neocortex',
+                 'transcriptomic perinatal neocortex')
+
+#Where to store the .csv file
+file_location <- "C:\\Users\\cmnt1\\OneDrive\\Desktop\\Haydar Lab\\Article List.csv"
+#User input ends here.
+
+final_df <- data.frame()
+
+for(search_topic in search_input) {
+  search_query <- EUtilsSummary(search_topic, retmax = 100)
+  records<- EUtilsGet(search_query)
+  pubmed_data <- data.frame('Title'=ArticleTitle(records),
+                             'ID'=ArticleId(records),
+                             'Abstract'=AbstractText(records))
+  combine <- rbind(final_df, pubmed_data)
+  final_df <- combine[!duplicated(combine$ID),]
+}
+
+final_df <- select(final_df, Title, ID)
+
+write.csv(final_df, file_location, row.names = FALSE)
