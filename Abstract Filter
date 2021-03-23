@@ -1,0 +1,24 @@
+#USER INPUT STARTS HERE
+search_keyword1 <- ""
+search_keyword2 <- ""
+
+file_location <- "C:\\Users\\cmnt1\\OneDrive\\Desktop\\Haydar Lab\\Article List.csv"
+
+#USER INPUT ENDS HERE
+
+articleList <- read.csv(file_location, header = TRUE)
+
+#Search for articles with keyword 1 AND keyword 2 in the abstract.
+#Could switch the condition from AND to OR by changing the symbol
+#"&" to "|"
+for(i in 1:nrow(articleList)) {
+  if (grepl(search_keyword1, articleList[i,]$Abstract) == TRUE & 
+         grepl(search_keyword2, articleList[i,]$Abstract) == TRUE) {
+    next
+  } else {
+    articleList <- articleList[-i,]
+  }
+}
+
+
+
