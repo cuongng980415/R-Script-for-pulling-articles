@@ -1,0 +1,69 @@
+#Need to install the package RISmed in advance
+library(RISmed)
+library(dplyr)
+
+#USER INPUT STARTS HERE
+
+#Insert keywords here for searching on the NCBI database
+search_input <- c('whole RNA sequencing cortex',
+                  'whole RNA sequencing brain',
+                  'whole RNAseq brain',
+                  'whole RNAseq cortex',
+                  'whole RNA-seq brain',
+                  'whole RNA-seq cortex')
+
+#Keywords to search for in abstract. Keyword 1 and 2 are paired together, and 
+#keyword 3 and 4 are paired together, etc..If don't have pair of keywords, could make
+#keyword 1 == keyword 2, keyword 3 == keyword 4, etc.. If do not have enough 6 
+#keywords, duplicate the keywords (keyword1 == keyword2 == keyword3 == keyword4,
+#== keyword5 == keyword6). If do not have keywords, could leave all of them blank ("").
+keyword1 = "neonatal"
+keyword2 = "prenatal"
+keyword3 = "newborn"
+keyword4 = "fetal"
+keyword5 = "postnatal"
+keyword6 = "perinatal"
+
+#Which database to search for
+database_name = "pubmed"
+
+#Where to store the .csv file
+save_location <- "C:\\Users\\cmnt1\\OneDrive\\Desktop\\Haydar Lab\\Article List.csv"
+
+#USER INPUT ENDS HERE
+
+final_df <- data.frame()
+
+for(search_topic in search_input) {
+  search_query <- EUtilsSummary(search_topic, db = database_name, retmax = 5000)
+  records<- EUtilsGet(search_query)
+  pubmed_data <- data.frame('Title'=ArticleTitle(records),
+                             'ID'=ArticleId(records),
+                             'Abstract'=AbstractText(records))
+  for (i in 1:nrow(pubmed_data)) {
+    #For each pair of keywords, search for articles with keyword 1 OR 
+    #keyword 2 in the abstract. Otherwise, search for articles with keyword 3
+    #OR keyword 4 in the abstract. Similar for keyword 5 and 6. Could switch
+    #the condition from OR to AND by changing the symbol "|" to "&"
+    if (grepl(keyword1, pubmed_data[i,]$Abstract) == TRUE | 
+        grepl(keyword2, pubmed_data[i,]$Abstract) == TRUE) {
+      pubmed_data_filtered <- pubmed_data[i,]
+      final_df <- rbind(final_df, pubmed_data_filtered)
+    } else if (grepl(keyword3, pubmed_data[i,]$Abstract) == TRUE
+               | grepl(keyword4, pubmed_data[i,]$Abstract) == TRUE) {
+      pubmed_data_filtered <- pubmed_data[i,]
+      final_df <- rbind(final_df, pubmed_data_filtered)
+    } else if (grepl(keyword5, pubmed_data[i,]$Abstract) == TRUE
+               | grepl(keyword6, pubmed_data[i,]$Abstract) == TRUE) {
+      pubmed_data_filtered <- pubmed_data[i,]
+      final_df <- rbind(final_df, pubmed_data_filtered)
+    } else {
+      next
+    }
+  }
+}
+
+final_df <- final_df[!duplicated(final_df$ID),]
+final_df_truncated <- select(final_df, Title, ID)
+
+write.csv(final_df, save_location, row.names = FALSE)
